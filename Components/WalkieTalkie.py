@@ -140,11 +140,10 @@ class Player:
 
         return player_stm
 
-class WalkieTalkieManager(object):
+class WalkieManager:
     """
     The WalkieTalkieManager class controlls the functionaity of the WalkieTalkie.
-    It receives messages and sends
+    It receives messages and sends.
     """
 
-    def __init__(self, arg):
-        self.arg = arg
+    # def __init__(self, arg):
