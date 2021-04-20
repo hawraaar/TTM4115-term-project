@@ -139,3 +139,12 @@ class Player:
         player.stm = player_stm
 
         return player_stm
+
+class WalkieTalkieManager(object):
+    """
+    The WalkieTalkieManager class controlls the functionaity of the WalkieTalkie.
+    It receives messages and sends
+    """
+
+    def __init__(self, arg):
+        self.arg = arg
