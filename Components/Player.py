@@ -44,11 +44,11 @@ class Player:
 
         # Play the sound by writing the audio data to the stream
         i = 0
-        while data != '':
-            i += 1 
+        while data != b'':
+            i += 1
             stream.write(data)
             data = wf.readframes(chunk)
-            if(i%1000 == 0): print("playing")
+            if(i%1000000 == 0): print("playing")
 
         print("Hello! - player")
 
