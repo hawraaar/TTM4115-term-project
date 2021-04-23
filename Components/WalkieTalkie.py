@@ -27,7 +27,7 @@ class Recorder:
         self.recording = False
         self.chunk = 1024  # Record in chunks of 1024 samples
         self.sample_format = pyaudio.paInt16  # 16 bits per sample
-        self.channels = 2
+        self.channels = 1
         self.fs = 44100  # Record at 44100 samples per second
         self.filename = "output.wav"
         self.p = pyaudio.PyAudio()
