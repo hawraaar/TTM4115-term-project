@@ -16,6 +16,12 @@ MQTT_TOPIC_INPUT = 'ttm4115/team_07/command'
 MQTT_TOPIC_OUTPUT = 'ttm4115/team_07/answer'
 
 
+
+"""
+TODO:
+
+"""
+
 class WalkieTalkie:
 
     """
@@ -96,7 +102,7 @@ class WalkieTalkie:
 
         self.app.startLabelFrame('Play:')
         def on_button_pressed_play(title):
-            self.driver.send('start', 'stm_player')
+            self.driver.send('start', 'stm_player', args=['output.wav'])
         self.app.addButton('Play', on_button_pressed_play)
         self.app.stopLabelFrame()
 

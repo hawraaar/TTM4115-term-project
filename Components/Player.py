@@ -19,8 +19,8 @@ class Player:
     def __init__(self):
         pass
 
-    def play(self):
-        filename = 'output.wav'
+    def play(self, _filename):
+        filename = _filename
         print("STARTING RECORDING")
 
         # Set chunk size of 1024 samples per data frame
@@ -43,14 +43,9 @@ class Player:
         data = wf.readframes(chunk)
 
         # Play the sound by writing the audio data to the stream
-        i = 0
         while data != b'':
-            i += 1
             stream.write(data)
             data = wf.readframes(chunk)
-            if(i%1000000 == 0): print("playing")
-
-        print("Hello! - player")
 
         # Close and terminate the stream
         stream.close()
@@ -64,7 +59,7 @@ class Player:
         t1 = {'trigger': 'start', 'source': 'ready', 'target': 'playing'}
         t2 = {'trigger': 'done', 'source': 'playing', 'target': 'ready'}
 
-        s_playing = {'name': 'playing', 'do': 'play()'}
+        s_playing = {'name': 'playing', 'do': 'play(*)'}
         player_stm = Machine(name=m_name, transitions=[t0, t1, t2], states=[s_playing], obj=player)
         player.stm = player_stm
 
