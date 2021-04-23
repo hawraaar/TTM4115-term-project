@@ -4,7 +4,7 @@ import logging
 from threading import Thread
 import json
 from appJar import gui
-import WalkieTalkie
+from WalkieTalkie import Player, Recorder
 
 # TODO: choose proper MQTT broker address
 MQTT_BROKER = 'mqtt.item.ntnu.no'
