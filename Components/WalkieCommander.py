@@ -60,10 +60,9 @@ class WalkieMenu:
         # start the internal loop to process MQTT messages
         #self.mqtt_client.loop_start()
 
+        self.driver.start(keep_active = True)
         self.create_gui()
         print("Help!")
-
-        self.driver.start(keep_active = True)
 
     def create_gui(self):
         self.app = gui()
@@ -76,12 +75,16 @@ class WalkieMenu:
             return None
 
         self.app.startLabelFrame('Starting recording:')
+        print("1")
 
         def on_button_pressed_start(title):
             self.driver.send('start', 'stm_recorder')
+            print("2")
 
         self.app.addButton('Start', on_button_pressed_start('start'))
+        print("3")
         self.app.stopLabelFrame()
+        print("4")
 
         self.app.startLabelFrame('Stop recording:')
         def on_button_pressed_stop(title):
