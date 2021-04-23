@@ -99,6 +99,9 @@ class WalkieMenu:
         """
         self.mqtt_client.loop_stop()
 
+        # stop the state machine Driver
+        self.driver.stop()
+
 
 # logging.DEBUG: Most fine-grained logging, printing everything
 # logging.INFO:  Only the most important informational log items
