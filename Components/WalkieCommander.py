@@ -15,7 +15,7 @@ MQTT_TOPIC_INPUT = 'ttm4115/team_07/command'
 MQTT_TOPIC_OUTPUT = 'ttm4115/team_07/answer'
 
 
-class WalkieMenu:
+class Walkie:
 
     """
     The component to send voice commands.
@@ -74,7 +74,7 @@ class WalkieMenu:
             if 'stop'  in label: return 'stop'
             return None
 
-        self.app.startLabelFrame('Starting recording:')
+        self.app.startLabelFrame('Start recording:')
         print("1")
 
         def on_button_pressed_start(title):
