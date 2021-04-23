@@ -21,6 +21,7 @@ class Player:
 
     def play(self):
         filename = 'output.wav'
+        print("STARTING RECORDING")
 
         # Set chunk size of 1024 samples per data frame
         chunk = 1024
