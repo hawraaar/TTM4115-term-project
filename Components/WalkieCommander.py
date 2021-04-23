@@ -93,7 +93,14 @@ class WalkieMenu:
         self.app.addButton('Stop recording', on_button_pressed_stop)
         self.app.stopLabelFrame()
 
+        self.app.startLabelFrame('Play:')
+        def on_button_pressed_play(title):
+            self.driver.send('start', 'stm_player')
+        self.app.addButton('Play', on_button_pressed_play)
+        self.app.stopLabelFrame()
+
         self.app.go()
+        self.driver.stop()
 
 
 
