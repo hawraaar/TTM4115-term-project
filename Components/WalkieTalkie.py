@@ -126,7 +126,7 @@ class Player:
         stream.close()
         p.terminate()
 
-    def createMachine(m_name, component):
+    def create_machine(m_name, component):
         # Create
         player = Player()
 
