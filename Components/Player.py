@@ -45,6 +45,7 @@ class Player:
         while data != '':
             stream.write(data)
             data = wf.readframes(chunk)
+        print("Hello! - player")
 
         # Close and terminate the stream
         stream.close()
