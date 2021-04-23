@@ -43,9 +43,9 @@ class WalkieMenu:
         #recorder.stm_player = stm_player
 
         self.driver = Driver()
-        driver.add_machine(stm_recorder)
-        driver.add_machine(stm_player)
-        driver.start(keep_active = True)
+        self.driver.add_machine(stm_recorder)
+        self.driver.add_machine(stm_player)
+        self.driver.start(keep_active = True)
         # create a new MQTT client
         #self._logger.debug('Connecting to MQTT broker {} at port {}'.format(MQTT_BROKER, MQTT_PORT))
         #self.mqtt_client = mqtt.Client()
