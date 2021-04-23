@@ -17,11 +17,6 @@ MQTT_TOPIC_OUTPUT = 'ttm4115/team_07/answer'
 
 
 
-"""
-TODO:
-
-"""
-
 class WalkieTalkie:
 
     """
