@@ -8,7 +8,7 @@ import json
 
 from os import system
 import os
-import time
+from time import gmtime, strftime, sleep
 
 import pyaudio
 import wave
@@ -22,16 +22,26 @@ MQTT_TOPIC_INPUT = 'ttm4115/team_07/command'
 MQTT_TOPIC_OUTPUT = 'ttm4115/team_07/answer'
 
 
+#TODO nr1: choose receiver
+#TODO nr2: Every sender should have an ID
+#          Every client subsribes to a channel/topic
+#          The payload of the message should contain a ID identifying the sender.
+
 class Recorder:
     def __init__(self):
+        self.output_dir = 'recordings'
+        # deleting all old recordings
+        filelist = [ f for f in os.listdir(self.output_dir) if f.endswith(".wav") ]
+        for f in filelist:
+            os.remove(os.path.join(self.output_dir, f))
+
         self.filename_list=[]
         self.recording = False
         self.chunk = 1024  # Record in chunks of 1024 samples
         self.sample_format = pyaudio.paInt16  # 16 bits per sample
         self.channels = 1
         self.fs = 44100  # Record at 44100 samples per second
-        self.filename = str(time.gmtime(0)) + ".wav"
-        self.filename_list.append(filename)
+        self.filename = ''
         self.p = pyaudio.PyAudio()
 
         # get the logger object for the component
@@ -39,9 +49,12 @@ class Recorder:
         print('logging under name {}.'.format(__name__))
         self._logger.info('Starting Component')
 
+
+
     def record(self):
         print("starting")
         self._logger.info('Starting')
+        self.filename = str(strftime("%Y-%m-%d %H-%M-%S", gmtime())) + ".wav"
         stream = self.p.open(format=self.sample_format,
                              channels=self.channels,
                              rate=self.fs,
@@ -54,6 +67,8 @@ class Recorder:
             data = stream.read(self.chunk)
             self.frames.append(data)
         print("done recording")
+        # Adding the filename to the list when finished recording
+        self.filename_list.append(self.filename)
         # Stop and close the stream
         stream.stop_stream()
         stream.close()
@@ -66,15 +81,24 @@ class Recorder:
         print("stopping")
         self.recording = False
 
+
     def process(self):
         print("processing")
         # Save the recorded data as a WAV file
-        wf = wave.open(self.filename, 'wb')
+        path = self.output_dir + '//' + self.filename
+        wf = wave.open(path, 'wb')
         wf.setnchannels(self.channels)
         wf.setsampwidth(self.p.get_sample_size(self.sample_format))
         wf.setframerate(self.fs)
         wf.writeframes(b''.join(self.frames))
         wf.close()
+
+        if(len(self.filename_list) > 3):
+            delete_file_name = self.filename_list[0]
+            delete_path = self.output_dir + '/' + delete_file_name
+            os.remove(delete_path)
+            self.filename_list.remove(delete_file_name)
+
         print("finished processing")
 
     def create_machine(m_name, component):

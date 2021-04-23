@@ -15,6 +15,10 @@ import wave
 from threading import Thread
 import json
 
+# TODO: Create a message queue and a way to handle receiving and
+# playing multiple messages.
+#       Folder for recodings - and a list that we keep updated.
+
 class Player:
     def __init__(self):
         pass
