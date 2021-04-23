@@ -42,7 +42,7 @@ class WalkieMenu:
         stm_player = Player.create_machine('stm_player', self)
         #recorder.stm_player = stm_player
 
-        self.driver = Driver()
+        self.driver = stmpy.Driver()
         self.driver.add_machine(stm_recorder)
         self.driver.add_machine(stm_player)
 
