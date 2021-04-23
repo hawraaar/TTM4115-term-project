@@ -81,7 +81,7 @@ class WalkieMenu:
 
         self.app.startLabelFrame('Starting recording:')
 
-        def on_button_pressed_start(self, title):
+        def on_button_pressed_start(title):
             self.driver.send('start', 'stm_recorder')
             """
             name = extract_timer_name(title)
@@ -93,7 +93,7 @@ class WalkieMenu:
         self.app.stopLabelFrame()
 
         self.app.startLabelFrame('Stop recording:')
-        def on_button_pressed_stop(self, title):
+        def on_button_pressed_stop(title):
             self.driver.send('stop', 'stm_recorder')
             """
             name = extract_timer_name(title)
