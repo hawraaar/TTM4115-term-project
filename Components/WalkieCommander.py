@@ -89,7 +89,7 @@ class WalkieMenu:
             publish_command(command)
             """
 
-        self.app.addButton('Start', on_button_pressed_start)
+        self.app.addButton('Start', on_button_pressed_start('start'))
         self.app.stopLabelFrame()
 
         self.app.startLabelFrame('Stop recording:')
@@ -100,7 +100,7 @@ class WalkieMenu:
             command = {"command": "stop", "name": name}
             publish_command(command)
             """
-        self.app.addButton('Stop recording', on_button_pressed_stop)
+        self.app.addButton('Stop recording', on_button_pressed_stop('stop'))
 
         self.app.stopLabelFrame()
 
