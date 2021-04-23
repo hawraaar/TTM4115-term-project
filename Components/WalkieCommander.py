@@ -45,7 +45,7 @@ class WalkieMenu:
         self.driver = Driver()
         self.driver.add_machine(stm_recorder)
         self.driver.add_machine(stm_player)
-        self.driver.start(keep_active = True)
+
         # create a new MQTT client
         #self._logger.debug('Connecting to MQTT broker {} at port {}'.format(MQTT_BROKER, MQTT_PORT))
         #self.mqtt_client = mqtt.Client()
@@ -62,8 +62,11 @@ class WalkieMenu:
 
         self.create_gui()
 
+        self.driver.start(keep_active = True)
+
     def create_gui(self):
         self.app = gui()
+
 
         def extract_timer_name(label):
             label = label.lower()
@@ -71,23 +74,10 @@ class WalkieMenu:
             if 'stop'  in label: return 'stop'
             return None
 
-            """
-        def publish_command(command):
-            payload = json.dumps(command)
-            self._logger.info(command)
-            self.mqtt_client.publish(MQTT_TOPIC_INPUT, payload=payload, qos=2)
-
-            """
-
         self.app.startLabelFrame('Starting recording:')
 
         def on_button_pressed_start(title):
             self.driver.send('start', 'stm_recorder')
-            """
-            name = extract_timer_name(title)
-            command = {"command": "start", "name": name}
-            publish_command(command)
-            """
 
         self.app.addButton('Start', on_button_pressed_start('start'))
         self.app.stopLabelFrame()
@@ -95,13 +85,8 @@ class WalkieMenu:
         self.app.startLabelFrame('Stop recording:')
         def on_button_pressed_stop(title):
             self.driver.send('stop', 'stm_recorder')
-            """
-            name = extract_timer_name(title)
-            command = {"command": "stop", "name": name}
-            publish_command(command)
-            """
-        self.app.addButton('Stop recording', on_button_pressed_stop('stop'))
 
+        self.app.addButton('Stop recording', on_button_pressed_stop('stop'))
         self.app.stopLabelFrame()
 
         self.app.go()
@@ -112,7 +97,6 @@ class WalkieMenu:
         """
         Stop the component.
         """
-        # stop the MQTT client
         self.mqtt_client.loop_stop()
 
 
