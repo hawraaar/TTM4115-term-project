@@ -81,7 +81,7 @@ class WalkieMenu:
             self.driver.send('start', 'stm_recorder')
             print("2")
 
-        self.app.addButton('Start', on_button_pressed_start('start'))
+        self.app.addButton('Start', on_button_pressed_start)
         print("3")
         self.app.stopLabelFrame()
         print("4")
@@ -89,8 +89,8 @@ class WalkieMenu:
         self.app.startLabelFrame('Stop recording:')
         def on_button_pressed_stop(title):
             self.driver.send('stop', 'stm_recorder')
-
-        self.app.addButton('Stop recording', on_button_pressed_stop('stop'))
+        print('5')
+        self.app.addButton('Stop recording', on_button_pressed_stop)
         self.app.stopLabelFrame()
 
         self.app.go()
