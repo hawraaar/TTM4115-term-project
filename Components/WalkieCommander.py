@@ -39,10 +39,10 @@ class WalkieMenu:
         stm_recorder = Recorder.create_machine('stm_recorder', self)
         #recorder.stm_recorder = stm_recorder
 
-        stm_player = Player.create_machine('stm_player', self)
+        stm_player = Player.createMachine('stm_player', self)
         #recorder.stm_player = stm_player
 
-        driver = Driver()
+        self.driver = Driver()
         driver.add_machine(stm_recorder)
         driver.add_machine(stm_player)
         driver.start(keep_active = True)
@@ -81,8 +81,8 @@ class WalkieMenu:
 
         self.app.startLabelFrame('Starting recording:')
 
-        def on_button_pressed_start(title):
-            driver.send('start', 'stm_recorder')
+        def on_button_pressed_start(self, title):
+            self.driver.send('start', 'stm_recorder')
             """
             name = extract_timer_name(title)
             command = {"command": "start", "name": name}
@@ -93,8 +93,8 @@ class WalkieMenu:
         self.app.stopLabelFrame()
 
         self.app.startLabelFrame('Stop recording:')
-        def on_button_pressed_stop(title):
-            driver.send('stop', 'stm_recorder')
+        def on_button_pressed_stop(self, title):
+            self.driver.send('stop', 'stm_recorder')
             """
             name = extract_timer_name(title)
             command = {"command": "stop", "name": name}
