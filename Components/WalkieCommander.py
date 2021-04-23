@@ -36,10 +36,10 @@ class WalkieMenu:
         self._logger.info('Starting Component')
 
 
-        stm_recorder = Recorder.createMachine('stm_recorder', self)
+        stm_recorder = Recorder.create_machine('stm_recorder', self)
         #recorder.stm_recorder = stm_recorder
 
-        stm_player = Player.createMachine('stm_player', self)
+        stm_player = Player.create_machine('stm_player', self)
         #recorder.stm_player = stm_player
 
         driver = Driver()
