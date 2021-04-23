@@ -4,7 +4,8 @@ import logging
 from threading import Thread
 import json
 from appJar import gui
-from WalkieTalkie import Player, Recorder
+from Recorder import Recorder
+from Player import Player
 
 # TODO: choose proper MQTT broker address
 MQTT_BROKER = 'mqtt.item.ntnu.no'
@@ -15,7 +16,7 @@ MQTT_TOPIC_INPUT = 'ttm4115/team_07/command'
 MQTT_TOPIC_OUTPUT = 'ttm4115/team_07/answer'
 
 
-class Walkie:
+class WalkieTalkie:
 
     """
     The component to send voice commands.
@@ -127,4 +128,4 @@ formatter = logging.Formatter('%(asctime)s - %(name)-12s - %(levelname)-8s - %(m
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-t = WalkieMenu()
+t = WalkieTalkie()
