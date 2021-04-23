@@ -146,4 +146,7 @@ class WalkieManager:
     It receives messages and sends.
     """
 
-    # def __init__(self, arg):
+    #TODO make it work!
+
+    def __init__(self, arg):
+        self.arguent = arg
