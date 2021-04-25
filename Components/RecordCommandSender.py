@@ -1,28 +1,23 @@
-#import paho.mqtt.client as mqtt
-from stmpy import Machine, Driver
+import paho.mqtt.client as mqtt
 import logging
 from threading import Thread
 import json
 from appJar import gui
-from Recorder import Recorder
-from Player import Player
 
 # TODO: choose proper MQTT broker address
-#MQTT_BROKER = 'mqtt.item.ntnu.no'
-#MQTT_PORT = 1883
+MQTT_BROKER = 'mqtt.item.ntnu.no'
+MQTT_PORT = 1883
 
 # TODO: choose proper topics for communication
-#MQTT_TOPIC_INPUT = 'ttm4115/team_07/command'
-#MQTT_TOPIC_OUTPUT = 'ttm4115/team_07/answer'
+MQTT_TOPIC_INPUT = 'ttm4115/team_07/command'
+MQTT_TOPIC_OUTPUT = 'ttm4115/team_07/answer'
 
 
-
-class WalkieTalkie:
-
+class TimerCommandSenderComponent:
     """
     The component to send voice commands.
     """
-    """
+
     def on_connect(self, client, userdata, flags, rc):
         # we just log that we are connected
         self._logger.debug('MQTT connected to {}'.format(client))
@@ -30,34 +25,27 @@ class WalkieTalkie:
     def on_message(self, client, userdata, msg):
         pass
 
-    """
-    
-
     def __init__(self):
         # get the logger object for the component
         self._logger = logging.getLogger(__name__)
         print('logging under name {}.'.format(__name__))
         self._logger.info('Starting Component')
 
+        # create a new MQTT client
+        self._logger.debug('Connecting to MQTT broker {} at port {}'.format(MQTT_BROKER, MQTT_PORT))
+        self.mqtt_client = mqtt.Client()
+        # callback methods
+        self.mqtt_client.on_connect = self.on_connect
+        self.mqtt_client.on_message = self.on_message
+        # Connect to the broker
+        self.mqtt_client.connect(MQTT_BROKER, MQTT_PORT)
+        # start the internal loop to process MQTT messages
+        self.mqtt_client.loop_start()
 
-        stm_recorder = Recorder.create_machine('stm_recorder', self)
-        #recorder.stm_recorder = stm_recorder
-
-        stm_player = Player.create_machine('stm_player', self)
-        #recorder.stm_player = stm_player
-
-        self.driver = Driver()
-        self.driver.add_machine(stm_recorder)
-        self.driver.add_machine(stm_player)
-
-
-        self.driver.start(keep_active = True)
         self.create_gui()
-        print("Help!")
 
     def create_gui(self):
         self.app = gui()
-
 
         def extract_timer_name(label):
             label = label.lower()
@@ -65,44 +53,39 @@ class WalkieTalkie:
             if 'stop'  in label: return 'stop'
             return None
 
-        self.app.startLabelFrame('Start recording:')
-        print("1")
+        def publish_command(command):
+            payload = json.dumps(command)
+            self._logger.info(command)
+            self.mqtt_client.publish(MQTT_TOPIC_INPUT, payload=payload, qos=2)
+
+        self.app.startLabelFrame('Starting recording:')
 
         def on_button_pressed_start(title):
-            self.driver.send('start', 'stm_recorder')
-            print("2")
+            name = extract_timer_name(title)
+            command = {"command": "start", "name": name}
+            publish_command(command)
 
         self.app.addButton('Start', on_button_pressed_start)
-        print("3")
         self.app.stopLabelFrame()
-        print("4")
 
-        self.app.startLabelFrame('Stop recording:')
+        self.app.startLabelFrame('Stopping timers:')
         def on_button_pressed_stop(title):
-            self.driver.send('stop', 'stm_recorder')
-        print('5')
+            name = extract_timer_name(title)
+            command = {"command": "stop", "name": name}
+            publish_command(command)
         self.app.addButton('Stop recording', on_button_pressed_stop)
-        self.app.stopLabelFrame()
 
-        self.app.startLabelFrame('Play:')
-        def on_button_pressed_play(title):
-            self.driver.send('start', 'stm_player', args=['output.wav'])
-        self.app.addButton('Play', on_button_pressed_play)
         self.app.stopLabelFrame()
 
         self.app.go()
-        self.driver.stop()
-
 
 
     def stop(self):
         """
         Stop the component.
         """
+        # stop the MQTT client
         self.mqtt_client.loop_stop()
-
-        # stop the state machine Driver
-        self.driver.stop()
 
 
 # logging.DEBUG: Most fine-grained logging, printing everything
@@ -118,4 +101,4 @@ formatter = logging.Formatter('%(asctime)s - %(name)-12s - %(levelname)-8s - %(m
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-t = WalkieTalkie()
+t = TimerCommandSenderComponent()

@@ -19,19 +19,37 @@ import json
 # playing multiple messages.
 #       Folder for recodings - and a list that we keep updated.
 
+
+
 class Player:
     def __init__(self):
-        pass
+
+        self.output_dir = '../player'
+        # deleting all old recordings
+        filelist = [ f for f in os.listdir(self.output_dir) if f.endswith(".wav") ]
+        for f in filelist:
+            os.remove(os.path.join(self.output_dir, f))
+        self.filename_list=[]
+
 
     def play(self, _filename):
+
         filename = _filename
-        print("STARTING RECORDING")
+        self.filename_list.append(filename)
+
+        '''
+        if(len(self.filename_list) > 3):
+            delete_file_name = self.filename_list[0]
+            delete_path = self.output_dir + '/' + delete_file_name
+            os.remove(delete_path)
+            self.filename_list.remove(delete_file_name)
+        '''
 
         # Set chunk size of 1024 samples per data frame
         chunk = 1024
 
         # Open the sound file
-        wf = wave.open(filename, 'rb')
+        wf = wave.open('../'+filename, 'rb')
 
         # Create an interface to PortAudio
         p = pyaudio.PyAudio()

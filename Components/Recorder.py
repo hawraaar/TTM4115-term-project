@@ -29,7 +29,7 @@ MQTT_TOPIC_OUTPUT = 'ttm4115/team_07/answer'
 
 class Recorder:
     def __init__(self):
-        self.output_dir = 'recordings'
+        self.output_dir = '../recordings'
         # deleting all old recordings
         filelist = [ f for f in os.listdir(self.output_dir) if f.endswith(".wav") ]
         for f in filelist:
