@@ -41,6 +41,7 @@ class WalkieTalkie:
         f.write(msg.payload)
         print("bbbbbb")
         f.close()
+        self.driver.send('start', 'stm_player', args=[self.temp_file])
 
     def send_message(self):
         print("hei")
@@ -126,10 +127,10 @@ class WalkieTalkie:
         self.app.addButton('Stop recording', on_button_pressed_stop)
         self.app.stopLabelFrame()
 
-        self.app.startLabelFrame('Play:')
+        self.app.startLabelFrame('Replay:')
         def on_button_pressed_play(title):
             self.driver.send('start', 'stm_player', args=[self.temp_file])
-        self.app.addButton('Play', on_button_pressed_play)
+        self.app.addButton('Replay', on_button_pressed_play)
         self.app.stopLabelFrame()
 
         self.app.go()
@@ -144,7 +145,6 @@ class WalkieTalkie:
 
         # stop the state machine Driver
         self.driver.stop()
-
 
 
 # logging.DEBUG: Most fine-grained logging, printing everything
