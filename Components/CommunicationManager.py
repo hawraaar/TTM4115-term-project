@@ -7,7 +7,7 @@ import json
 import time
 
 
-#from WalkieCommander import WalkieTalkie
+from WalkieCommander import WalkieTalkie
 
 MQTT_BROKER = 'mqtt.item.ntnu.no'
 MQTT_PORT = 1883
@@ -83,7 +83,7 @@ class CommunicationManager:
         # start the internal loop to process MQTT messages
         self.mqtt_client.loop_start()
 
-        walkie = WalkieTalkie()
+        #walkie = WalkieTalkie()
 
         # we start the stmpy driver, without any state machines for now
         #self.stm_driver = stmpy.Driver()

@@ -22,6 +22,7 @@ MQTT_TOPIC_INPUT = 'ttm4115/team_07/command'
 MQTT_TOPIC_OUTPUT = 'ttm4115/team_07/answer'
 
 
+
 #TODO nr1: choose receiver
 #TODO nr2: Every sender should have an ID
 #          Every client subsribes to a channel/topic
@@ -86,6 +87,7 @@ class Recorder:
         print("processing")
         # Save the recorded data as a WAV file
         path = self.output_dir + '//' + self.filename
+        self.path = path
         wf = wave.open(path, 'wb')
         wf.setnchannels(self.channels)
         wf.setsampwidth(self.p.get_sample_size(self.sample_format))
@@ -114,4 +116,7 @@ class Recorder:
 
         recorder_stm = Machine(name=m_name, transitions=[t0, t1, t2, t3], states=[s_recording, s_processing], obj=recorder)
         recorder.stm = recorder_stm
-        return recorder_stm
+        return recorder
+
+    def get_latest_file(self):
+        return self.output_dir + '/' + self.filename

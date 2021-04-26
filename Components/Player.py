@@ -49,7 +49,7 @@ class Player:
         chunk = 1024
 
         # Open the sound file
-        wf = wave.open('../'+filename, 'rb')
+        wf = wave.open('../player/'+filename, 'rb')
 
         # Create an interface to PortAudio
         p = pyaudio.PyAudio()
@@ -80,6 +80,7 @@ class Player:
         t0 = {'source': 'initial', 'target': 'ready'}
         t1 = {'trigger': 'start', 'source': 'ready', 'target': 'playing'}
         t2 = {'trigger': 'done', 'source': 'playing', 'target': 'ready'}
+        #t3 = {'trigger': 'start', 'source': 'playing', 'source': 'playing'}
 
         s_playing = {'name': 'playing', 'do': 'play(*)'}
         player_stm = Machine(name=m_name, transitions=[t0, t1, t2], states=[s_playing], obj=player)
