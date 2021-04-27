@@ -120,7 +120,7 @@ class WalkieTalkie:
         if (message_payload_received['ID'] != self.ID):
             temp_file = str(strftime("%Y-%m-%d %H-%M-%S", gmtime())) + ".wav"
             self.temp_file = temp_file
-            f = open(os.path.join(self.channel_dir,self.temp_file), 'wb')
+            f = open(os.path.join(self.channel_dir, self.temp_file), 'wb')
             f.write(dataToByteArray)
             print("bbbbbb")
             f.close()
