@@ -82,7 +82,8 @@ class WalkieTalkie:
 
         #message_payload_received = json.load(io.BytesIO(msg.payload))
         message_payload_received = json.loads(msg.payload)
-        dataFixed = base64.b64decode(message_payload_received['data'])
+        dataFixed = base64.b64decode(bytearray(bytes(message_payload_received['data'], "utf-8")))
+        #print(dataFixed)
         dataToByteArray = dataFixed
         print("client_id: " + message_payload_received['ID'])
 
@@ -102,22 +103,22 @@ class WalkieTalkie:
         f = open(path, "rb")
         imagestring = f.read()
         f.close()
-        byteArray = bytearray(imagestring)
+        imageByteArray = bytearray(imagestring)
         # DEBUG start:
         print("The imagestring is a: ", type(imagestring))
-        print("The bytearray is a: ", type(byteArray))
+        print("The bytearray is a: ", type(imageByteArray))
         #print("STRING?: " + imagestring)
         #print("BASE 64: " + base64.b64encode(imagestring))
         #print("BASE 64 type: " + type(base64.b64encode(imagestring)))
         print("hei2")
         # DEBUG end:
-        #byteArrayString = str(base64.b64encode(byteArray))
-        imageStringEncoded = str(base64.b64encode(imagestring))
-        print("The imageStringEncoded is a: ", type(imageStringEncoded))
+        imageByteArrayString = str(base64.b64encode(imageByteArray), "utf-8")
+        #imageStringEncoded = str(base64.b64encode(imagestring))
+        #print("The imageStringEncoded is a: ", type(imageStringEncoded))
         #print("imageStringEncoded = " + imageStringEncoded)
         #print(byteArrayString)
 
-        package = {'ID': self.ID, 'data': imageStringEncoded}
+        package = {'ID': self.ID, 'data': imageByteArrayString}
         payload = json.dumps(package)
 
         publish.single(MQTT_TOPIC_OUTPUT + str(self.channel), payload, client_id=self.ID, hostname=MQTT_BROKER, port=MQTT_PORT)
