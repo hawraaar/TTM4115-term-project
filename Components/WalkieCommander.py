@@ -5,6 +5,8 @@ from stmpy import Machine, Driver
 import logging
 from threading import Thread
 import json
+import io
+import base64
 from appJar import gui
 from Recorder import Recorder
 from Player import Player
@@ -28,7 +30,7 @@ class WalkieTalkie:
     The component to send and receive voice messages.
     """
 
-    def __init__(self):
+    def __init__(self, ID):
         # setting the standard channel as 0
         self.channel = 0
         self.ID = "default"
@@ -77,12 +79,19 @@ class WalkieTalkie:
     def on_message(self, client, userdata, msg):
         print("A message is received")
         self._logger.debug('Incoming message to topic {}'.format(msg.topic))
+
+        #message_payload_received = json.load(io.BytesIO(msg.payload))
+        message_payload_received = json.loads(msg.payload)
+        dataFixed = base64.b64decode(message_payload_received['data'])
+        dataToByteArray = dataFixed
+        print("client_id: " + message_payload_received['ID'])
+
         # encdoding from bytes to string. This
-        if (self.client_id != client):
+        if (message_payload_received['ID'] != self.ID):
             temp_file = str(strftime("%Y-%m-%d %H-%M-%S", gmtime())) + ".wav"
             self.temp_file = temp_file
             f = open("../player/" + temp_file, 'wb')
-            f.write(msg.payload)
+            f.write(dataToByteArray)
             print("bbbbbb")
             f.close()
             self.driver.send('start', 'stm_player', args=[self.temp_file])
@@ -94,13 +103,29 @@ class WalkieTalkie:
         imagestring = f.read()
         f.close()
         byteArray = bytearray(imagestring)
+        # DEBUG start:
+        print("The imagestring is a: ", type(imagestring))
+        print("The bytearray is a: ", type(byteArray))
+        #print("STRING?: " + imagestring)
+        #print("BASE 64: " + base64.b64encode(imagestring))
+        #print("BASE 64 type: " + type(base64.b64encode(imagestring)))
         print("hei2")
+        # DEBUG end:
+        #byteArrayString = str(base64.b64encode(byteArray))
+        imageStringEncoded = str(base64.b64encode(imagestring))
+        print("The imageStringEncoded is a: ", type(imageStringEncoded))
+        #print("imageStringEncoded = " + imageStringEncoded)
+        #print(byteArrayString)
 
-        #self.mqtt_client.publish(MQTT_TOPIC_OUTPUT, "TEST")
+        package = {'ID': self.ID, 'data': imageStringEncoded}
+        payload = json.dumps(package)
 
-        publish.single(MQTT_TOPIC_OUTPUT+str(self.channel), byteArray, client_id=self.ID, hostname=MQTT_BROKER, port=MQTT_PORT)
+        publish.single(MQTT_TOPIC_OUTPUT + str(self.channel), payload, client_id=self.ID, hostname=MQTT_BROKER, port=MQTT_PORT)
+
         time.sleep(1)
         print("hei3")
+
+
 
     def create_gui(self):
         self.app = gui()
@@ -191,4 +216,4 @@ formatter = logging.Formatter('%(asctime)s - %(name)-12s - %(levelname)-8s - %(m
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-t = WalkieTalkie()
+t = WalkieTalkie("Hawra")
