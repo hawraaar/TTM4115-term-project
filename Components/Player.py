@@ -23,27 +23,18 @@ import json
 
 class Player:
     def __init__(self):
-
-        self.output_dir = '../player'
-        # deleting all old recordings
-        filelist = [ f for f in os.listdir(self.output_dir) if f.endswith(".wav") ]
-        for f in filelist:
-            os.remove(os.path.join(self.output_dir, f))
-        self.filename_list=[]
-
+        pass
 
     def play(self, _filename):
-
         filename = _filename
-        self.filename_list.append(filename)
-
-        '''
-        if(len(self.filename_list) > 3):
+        #self.filename_list.append(filename)
+        """
+        if(len(self.filename_list) > 5):
             delete_file_name = self.filename_list[0]
             delete_path = self.output_dir + '/' + delete_file_name
             os.remove(delete_path)
             self.filename_list.remove(delete_file_name)
-        '''
+        """
 
         # Set chunk size of 1024 samples per data frame
         chunk = 1024
@@ -82,8 +73,8 @@ class Player:
         t2 = {'trigger': 'done', 'source': 'playing', 'target': 'ready'}
         #t3 = {'trigger': 'start', 'source': 'playing', 'source': 'playing'}
 
-        s_playing = {'name': 'playing', 'do': 'play(*)'}
+        s_playing = {'name': 'playing', 'do': 'play(*)','start':'defer'}
         player_stm = Machine(name=m_name, transitions=[t0, t1, t2], states=[s_playing], obj=player)
         player.stm = player_stm
 
-        return player_stm
+        return player

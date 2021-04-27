@@ -46,7 +46,6 @@ class CommunicationManager:
         print("hei2")
 
         #self.mqtt_client.publish(MQTT_TOPIC_OUTPUT, "TEST")
-
         publish.single(MQTT_TOPIC_OUTPUT, byteArray, hostname=MQTT_BROKER, port=MQTT_PORT)
         time.sleep(1)
         print("hei3")

@@ -12,6 +12,8 @@ from Recorder import Recorder
 from Player import Player
 import time
 from time import gmtime, strftime, sleep
+from os import system
+import os
 
 
 # TODO: choose proper MQTT broker address
@@ -30,7 +32,13 @@ class WalkieTalkie:
     The component to send and receive voice messages.
     """
 
-    def __init__(self, ID):
+    def __init__(self):
+        # the output dir is where recordings are stored
+        self.output_dir = "../player/"
+        self.filelist = []
+        # cleaing the player list
+        self.clear_player_folder()
+
         # setting the standard channel as 0
         self.channel = 0
         self.ID = "default"
@@ -59,7 +67,9 @@ class WalkieTalkie:
         stm_recorder = recorder.stm
         #recorder.stm_recorder = stm_recorder
 
-        stm_player = Player.create_machine('stm_player', self)
+        player = Player.create_machine('stm_player', self)
+        self.player=player
+        stm_player=player.stm
         #recorder.stm_player = stm_player
 
         self.driver = Driver()
@@ -69,6 +79,12 @@ class WalkieTalkie:
         self.driver.start(keep_active = True)
         self.create_gui()
         print("Help!")
+
+    def clear_player_folder(self):
+        for f in os.listdir(self.output_dir):
+            if f.endswith(".wav"):
+                os.remove(os.path.join(self.output_dir, f))
+
 
 
     def on_connect(self, client, userdata, flags, rc):
@@ -95,7 +111,13 @@ class WalkieTalkie:
             f.write(dataToByteArray)
             print("bbbbbb")
             f.close()
-            self.driver.send('start', 'stm_player', args=[self.temp_file])
+            self.driver.send('start', 'stm_player', args=[self.output_dir + self.temp_file])
+            #print(self.player.get_files())
+            #    self.app.clearOptionBox("Choose message")
+            time.sleep(1)
+            self.filelist = [ f for f in os.listdir(self.output_dir) if f.endswith(".wav") ]
+            print(self.filelist)
+            self.app.changeOptionBox("Choose message", self.filelist)
 
     def send_message(self):
         print("hei")
@@ -105,19 +127,9 @@ class WalkieTalkie:
         f.close()
         imageByteArray = bytearray(imagestring)
         # DEBUG start:
-        print("The imagestring is a: ", type(imagestring))
-        print("The bytearray is a: ", type(imageByteArray))
-        #print("STRING?: " + imagestring)
-        #print("BASE 64: " + base64.b64encode(imagestring))
-        #print("BASE 64 type: " + type(base64.b64encode(imagestring)))
         print("hei2")
         # DEBUG end:
         imageByteArrayString = str(base64.b64encode(imageByteArray), "utf-8")
-        #imageStringEncoded = str(base64.b64encode(imagestring))
-        #print("The imageStringEncoded is a: ", type(imageStringEncoded))
-        #print("imageStringEncoded = " + imageStringEncoded)
-        #print(byteArrayString)
-
         package = {'ID': self.ID, 'data': imageByteArrayString}
         payload = json.dumps(package)
 
@@ -184,15 +196,25 @@ class WalkieTalkie:
 
 
         # Replay last received message
-        self.app.startLabelFrame('Replay last message:')
+        self.app.startLabelFrame('Replay message:')
+
+        self.app.addLabelOptionBox("Choose message", self.filelist)
+
+        self.app.setOptionBoxWidth("Choose message", 25);
+
         def on_button_pressed_play(title):
-            self.driver.send('start', 'stm_player', args=[self.temp_file])
+            play_list = self.filelist
+            if play_list:
+                tmp = self.app.getOptionBox('Choose message')
+                print('Temp Fil: ' + str(tmp))
+                self.driver.send('start', 'stm_player', args=[tmp])
+            else:
+                print("Player listen er tom")
         self.app.addButton('Replay', on_button_pressed_play)
         self.app.stopLabelFrame()
 
         self.app.go()
         self.driver.stop()
-
 
     def stop(self):
         """
@@ -217,4 +239,4 @@ formatter = logging.Formatter('%(asctime)s - %(name)-12s - %(levelname)-8s - %(m
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-t = WalkieTalkie("Hawra")
+t = WalkieTalkie()
