@@ -120,11 +120,11 @@ class WalkieTalkie:
         if (message_payload_received['ID'] != self.ID):
             temp_file = str(strftime("%Y-%m-%d %H-%M-%S", gmtime())) + ".wav"
             self.temp_file = temp_file
-            f = open(os.join(self.channel_dir, temp_file), 'wb')
+            f = open(os.path.join(self.channel_dir,self.temp_file), 'wb')
             f.write(dataToByteArray)
             print("bbbbbb")
             f.close()
-            self.driver.send('start', 'stm_player', args=[os.join(self.channel_dir, self.temp_file)])
+            self.driver.send('start', 'stm_player', args=[os.path.join(self.channel_dir, self.temp_file)])
             time.sleep(1)
             self.filelist = [ f for f in os.listdir(self.channel_dir) if f.endswith(".wav") ]
             print(self.filelist)
@@ -219,7 +219,7 @@ class WalkieTalkie:
             if play_list:
                 tmp = self.app.getOptionBox('Choose message')
                 print('Temp Fil: ' + str(tmp))
-                self.driver.send('start', 'stm_player', args=[os.join(self.channel_dir, tmp)])
+                self.driver.send('start', 'stm_player', args=[os.path.join(self.channel_dir, tmp)])
             else:
                 print("Player listen er tom")
         self.app.addButton('Replay', on_button_pressed_play)
