@@ -12,7 +12,7 @@ from Recorder import Recorder
 from Player import Player
 import time
 from time import gmtime, strftime, sleep
-from os import system
+from os import system, path
 import os
 
 
@@ -23,6 +23,7 @@ MQTT_PORT = 1883
 # TODO: choose proper topics for communication
 MQTT_TOPIC_INPUT = 'ttm4115/team_07/Channel'
 MQTT_TOPIC_OUTPUT = 'ttm4115/team_07/Channel'
+MAX_CHANNELS = 5
 
 
 
@@ -33,14 +34,16 @@ class WalkieTalkie:
     """
 
     def __init__(self):
-        # the output dir is where recordings are stored
-        self.output_dir = "../player/"
-        self.filelist = []
-        # cleaing the player list
-        self.clear_player_folder()
-
         # setting the standard channel as 0
         self.channel = 0
+        # the output dir is where recordings are stored
+        self.output_dir = "../player/channel"
+        self.channel_dir = self.output_dir + str(self.channel)
+        self.filelist = []
+        # cleaing the player list
+        self.creat_channel_folder(self.output_dir)
+        self.clear_player_folder(self.output_dir)
+
         self.ID = "default"
         # get the logger object for the component
         self._logger = logging.getLogger(__name__)
@@ -80,10 +83,20 @@ class WalkieTalkie:
         self.create_gui()
         print("Help!")
 
-    def clear_player_folder(self):
-        for f in os.listdir(self.output_dir):
-            if f.endswith(".wav"):
-                os.remove(os.path.join(self.output_dir, f))
+    def creat_channel_folder(self, output_dir):
+        for i in range(MAX_CHANNELS):
+            path = output_dir + str(i)
+            if not os.path.exists(path):
+                os.mkdir(path)
+
+    def clear_player_folder(self, output_dir):
+        for i in range(MAX_CHANNELS):
+            for f in os.listdir(output_dir + str(i)):
+                if f.endswith(".wav"):
+                    os.remove(os.path.join(output_dir+str(i), f))
+
+    def set_channel_path(self):
+        self.channel_dir=self.output_dir +str(self.channel)
 
 
 
@@ -107,15 +120,13 @@ class WalkieTalkie:
         if (message_payload_received['ID'] != self.ID):
             temp_file = str(strftime("%Y-%m-%d %H-%M-%S", gmtime())) + ".wav"
             self.temp_file = temp_file
-            f = open("../player/" + temp_file, 'wb')
+            f = open(os.join(self.channel_dir, temp_file), 'wb')
             f.write(dataToByteArray)
             print("bbbbbb")
             f.close()
-            self.driver.send('start', 'stm_player', args=[self.output_dir + self.temp_file])
-            #print(self.player.get_files())
-            #    self.app.clearOptionBox("Choose message")
+            self.driver.send('start', 'stm_player', args=[os.join(self.channel_dir, self.temp_file)])
             time.sleep(1)
-            self.filelist = [ f for f in os.listdir(self.output_dir) if f.endswith(".wav") ]
+            self.filelist = [ f for f in os.listdir(self.channel_dir) if f.endswith(".wav") ]
             print(self.filelist)
             self.app.changeOptionBox("Choose message", self.filelist)
 
@@ -139,7 +150,6 @@ class WalkieTalkie:
         print("hei3")
 
 
-
     def create_gui(self):
         self.app = gui()
 
@@ -158,7 +168,8 @@ class WalkieTalkie:
         self.app.addLabel("Channel",text="Connected to channel: {}".format(self.channel))
         def on_button_pressed_increase(title):
             self.mqtt_client.unsubscribe(MQTT_TOPIC_INPUT + str(self.channel))
-            self.channel +=1
+            self.channel = (self.channel + 1)% MAX_CHANNELS
+            self.set_channel_path()
             self.mqtt_client.subscribe(MQTT_TOPIC_INPUT + str(self.channel))
             self.app.setLabel("Channel",text="Connected to channel: {}".format(self.channel))
 
@@ -166,7 +177,8 @@ class WalkieTalkie:
 
         def on_button_pressed_decrease(title):
             self.mqtt_client.unsubscribe(MQTT_TOPIC_INPUT + str(self.channel))
-            self.channel -= 1
+            self.channel = (self.channel - 1) % MAX_CHANNELS
+            self.set_channel_path()
             self.mqtt_client.subscribe(MQTT_TOPIC_INPUT + str(self.channel))
             self.app.setLabel("Channel",text="Connected to channel: {}".format(self.channel))
 
@@ -207,7 +219,7 @@ class WalkieTalkie:
             if play_list:
                 tmp = self.app.getOptionBox('Choose message')
                 print('Temp Fil: ' + str(tmp))
-                self.driver.send('start', 'stm_player', args=[tmp])
+                self.driver.send('start', 'stm_player', args=[os.join(self.channel_dir, tmp)])
             else:
                 print("Player listen er tom")
         self.app.addButton('Replay', on_button_pressed_play)

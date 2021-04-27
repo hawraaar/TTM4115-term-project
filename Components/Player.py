@@ -40,7 +40,7 @@ class Player:
         chunk = 1024
 
         # Open the sound file
-        wf = wave.open('../player/'+filename, 'rb')
+        wf = wave.open(filename, 'rb')
 
         # Create an interface to PortAudio
         p = pyaudio.PyAudio()
