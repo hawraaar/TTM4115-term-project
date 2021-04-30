@@ -32,7 +32,6 @@ class Message:
         self.text = None
 
 class WalkieTalkie:
-
     """
     The component to send and receive voice messages.
     """
@@ -66,7 +65,6 @@ class WalkieTalkie:
 
         # subscribe to proper topic(s) of your choice
         self.mqtt_client.subscribe(MQTT_TOPIC_INPUT + str(self.channel))
-
         # start the internal loop to process MQTT messages
         self.mqtt_client.loop_start()
 
@@ -106,12 +104,12 @@ class WalkieTalkie:
         self.channel_dir=self.output_dir +str(self.channel)
 
 
-
     def on_connect(self, client, userdata, flags, rc):
         print("hallo")
         self._logger.debug('MQTT connected to {}'.format(client))
         self.client_id = client
 
+    # Function when WalkieTalkie receives a message
     def on_message(self, client, userdata, msg):
         print("A message is received")
         self._logger.debug('Incoming message to topic {}'.format(msg.topic))
@@ -137,28 +135,39 @@ class WalkieTalkie:
             self.fileNameList = [ m.path for m in self.messageList]
             print(self.fileNameList)
             self.app.changeOptionBox("Choose message", self.fileNameList)
+        else:
+            if(message_payload_received['Msg_ID'] == self.recorder.get_latest_file()):
+                print("Message delivered")
+                self.app.setLabel("delivered","Message delivered")
+                self.app.setLabelBg("delivered","green")
+            else:
+                print('Message lost not last message-ID')
 
     def send_message(self):
         print("hei")
-        try:
-            path = self.recorder.get_latest_file()
-            f = open(path, "rb")
-            imagestring = f.read()
-            f.close()
-            imageByteArray = bytearray(imagestring)
-            # DEBUG start:
-            print("hei2")
-            # DEBUG end:
-            imageByteArrayString = str(base64.b64encode(imageByteArray), "utf-8")
-            package = {'ID': self.ID, 'data': imageByteArrayString}
-            payload = json.dumps(package)
-            publish.single(MQTT_TOPIC_OUTPUT + str(self.channel), payload, client_id=self.ID, hostname=MQTT_BROKER, port=MQTT_PORT)
-            time.sleep(1)
-        except:
-            print("Message not sent since no message is available")
-        print("hei3")
+    #   try:
+        path = self.recorder.get_latest_file()
+        f = open(path, "rb")
+        imagestring = f.read()
+        f.close()
+        imageByteArray = bytearray(imagestring)
+        # DEBUG start:
+        print("hei2")
+        # DEBUG end:
+        imageByteArrayString = str(base64.b64encode(imageByteArray), "utf-8")
+        package = {'ID': self.ID, 'data': imageByteArrayString, 'Msg_ID': path}
+        payload = json.dumps(package)
+        # mqtt_msg = publish.single(MQTT_TOPIC_OUTPUT + str(self.channel), payload, client_id=self.ID, hostname=MQTT_BROKER, port=MQTT_PORT, qos = 2)
+        mqtt_msg = self.mqtt_client.publish(MQTT_TOPIC_OUTPUT + str(self.channel), payload, qos = 2)
+        print(mqtt_msg)
+        print(mqtt_msg.is_published())
+        self.app.setLabel("delivered","Sending")
+        self.app.setLabelBg("delivered","yellow")
+        time.sleep(1)
+        # catching the exception thrown by mqtt when no acc is given.
 
 
+    # Creates the appJar GUI
     def create_gui(self):
         BUTTON_WIDTH = 20
         self.app = gui("Walkie-Talkie", "300x500")
@@ -171,7 +180,7 @@ class WalkieTalkie:
         def on_button_name(title):
             self.ID = self.app.getEntry("NameEntry")
             self.app.setLabel("NameLabel", "User: " + self.ID)
-            print("ASDFDASFSA")
+            print("User changed")
 
         self.app.addEntry("NameEntry", 1, 1)
         self.app.setEntrySubmitFunction("NameEntry", on_button_name)
@@ -181,7 +190,7 @@ class WalkieTalkie:
         # Choose channel
         self.app.startLabelFrame('Change channel:')
         self.app.addLabel("Channel",text="Connected to channel: {}".format(self.channel), colspan=2)
-        self.app.setLabelWidth('Channel', BUTTON_WIDTH*(5/3))
+        self.app.setLabelWidth('Channel', int(BUTTON_WIDTH*(5/3)))
 
         def on_button_pressed_increase(title):
             self.mqtt_client.unsubscribe(MQTT_TOPIC_INPUT + str(self.channel))
@@ -230,6 +239,7 @@ class WalkieTalkie:
         self.app.setButtonWidth('Stop and send', BUTTON_WIDTH)
         self.app.addButton('Resend', on_button_pressed_resend, colspan=2)
         self.app.setButtonWidth('Resend', BUTTON_WIDTH*2)
+        self.app.addLabel("delivered", "")
         self.app.stopLabelFrame()
 
         # Replay last received message
@@ -238,18 +248,18 @@ class WalkieTalkie:
         self.app.setOptionBoxWidth('Choose message', BUTTON_WIDTH)
 
 
-        def on_button_pressed_play(title):
+        def on_button_pressed_replay(title):
             play_list = self.fileNameList
             if play_list:
                 tmp = self.app.getOptionBox('Choose message')
-                print('Temp File: ' + str(tmp))
-                self.driver.send('start', 'stm_player', args=[os.path.join(self.channel_dir, tmp)])
+                #print('Temp File: ' + str(tmp))
+                self.driver.send('replay', 'stm_player', args=[os.path.join(self.channel_dir, tmp)])
             else:
                 print("You have no messages. ")
 
-        self.app.addButton('Replay', on_button_pressed_play, 1, 0)
+        self.app.addButton('Replay', on_button_pressed_replay, 1, 0)
         self.app.setButtonWidth('Replay', BUTTON_WIDTH)
-        self.app.addButton('Text Message', on_button_pressed_play, 1, 1)
+        self.app.addButton('Text Message', on_button_pressed_replay, 1, 1)
         self.app.setButtonWidth('Text Message', BUTTON_WIDTH)
         self.app.stopLabelFrame()
         self.app.startFrame("message frame")
@@ -282,8 +292,6 @@ def main():
     logger.addHandler(ch)
     t = WalkieTalkie()
 
-
 # Voice to text - create a stm and then put do the
-
 if __name__ == "__main__":
     main()

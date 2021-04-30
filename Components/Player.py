@@ -26,15 +26,8 @@ class Player:
         pass
 
     def play(self, _filename):
+
         filename = _filename
-        #self.filename_list.append(filename)
-        """
-        if(len(self.filename_list) > 5):
-            delete_file_name = self.filename_list[0]
-            delete_path = self.output_dir + '/' + delete_file_name
-            os.remove(delete_path)
-            self.filename_list.remove(delete_file_name)
-        """
 
         # Set chunk size of 1024 samples per data frame
         chunk = 1024
@@ -71,10 +64,10 @@ class Player:
         t0 = {'source': 'initial', 'target': 'ready'}
         t1 = {'trigger': 'start', 'source': 'ready', 'target': 'playing'}
         t2 = {'trigger': 'done', 'source': 'playing', 'target': 'ready'}
-        #t3 = {'trigger': 'start', 'source': 'playing', 'source': 'playing'}
+        t3 = {'trigger': 'replay', 'source': 'ready', 'target': 'playing'}
 
-        s_playing = {'name': 'playing', 'do': 'play(*)','start':'defer'}
-        player_stm = Machine(name=m_name, transitions=[t0, t1, t2], states=[s_playing], obj=player)
+        s_playing = {'name': 'playing', 'do': 'play(*)','start':'defer', 'replay':''}
+        player_stm = Machine(name=m_name, transitions=[t0, t1, t2, t3], states=[s_playing], obj=player)
         player.stm = player_stm
 
         return player
