@@ -106,6 +106,7 @@ class WalkieTalkie:
 
     def on_connect(self, client, userdata, flags, rc):
         print("hallo")
+        #print("Connection returned result: "+ connack_string(rc))
         self._logger.debug('MQTT connected to {}'.format(client))
         self.client_id = client
 
@@ -159,8 +160,15 @@ class WalkieTalkie:
         payload = json.dumps(package)
         # mqtt_msg = publish.single(MQTT_TOPIC_OUTPUT + str(self.channel), payload, client_id=self.ID, hostname=MQTT_BROKER, port=MQTT_PORT, qos = 2)
         mqtt_msg = self.mqtt_client.publish(MQTT_TOPIC_OUTPUT + str(self.channel), payload, qos = 2)
-        print(mqtt_msg)
-        print(mqtt_msg.is_published())
+
+        timestamp = time.time()
+        #while(not mqtt_msg.is_published()):
+        #    if(time.time() - timestamp > 5):
+        #        print("Message not delivered")
+        #        break
+        #    print(mqtt_msg.is_published())
+        print("sending the message took: {} ".format(time.time()-timestamp))
+
         self.app.setLabel("delivered","Sending")
         self.app.setLabelBg("delivered","yellow")
         time.sleep(1)
