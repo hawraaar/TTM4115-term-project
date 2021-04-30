@@ -26,6 +26,10 @@ MQTT_TOPIC_OUTPUT = 'ttm4115/team_07/Channel'
 MAX_CHANNELS = 5
 
 
+class Message:
+    def __init__(self, path):
+        self.path = path
+        self.text = None
 
 class WalkieTalkie:
 
@@ -39,7 +43,8 @@ class WalkieTalkie:
         # the output dir is where recordings are stored
         self.output_dir = "../player/channel"
         self.channel_dir = self.output_dir + str(self.channel)
-        self.filelist = []
+        self.fileNameList = []
+        self.messageList = []
         # cleaing the player list
         self.creat_channel_folder(self.output_dir)
         self.clear_player_folder(self.output_dir)
@@ -58,27 +63,29 @@ class WalkieTalkie:
         self.mqtt_client.on_message = self.on_message
         # Connect to the broker
         self.mqtt_client.connect(MQTT_BROKER, MQTT_PORT)
-        # subscribe to proper topic(s) of your choice
 
+        # subscribe to proper topic(s) of your choice
         self.mqtt_client.subscribe(MQTT_TOPIC_INPUT + str(self.channel))
 
         # start the internal loop to process MQTT messages
         self.mqtt_client.loop_start()
 
+        # recorder
         recorder = Recorder.create_machine('stm_recorder', self)
         self.recorder = recorder
         stm_recorder = recorder.stm
-        #recorder.stm_recorder = stm_recorder
 
+        # player
         player = Player.create_machine('stm_player', self)
         self.player=player
         stm_player=player.stm
-        #recorder.stm_player = stm_player
 
+        # creating driver, attaching machines
         self.driver = Driver()
         self.driver.add_machine(stm_recorder)
         self.driver.add_machine(stm_player)
 
+        # starting driver
         self.driver.start(keep_active = True)
         self.create_gui()
         print("Help!")
@@ -126,46 +133,56 @@ class WalkieTalkie:
             f.close()
             self.driver.send('start', 'stm_player', args=[os.path.join(self.channel_dir, self.temp_file)])
             time.sleep(1)
-            self.filelist = [ f for f in os.listdir(self.channel_dir) if f.endswith(".wav") ]
-            print(self.filelist)
-            self.app.changeOptionBox("Choose message", self.filelist)
+            self.messageList =  [ Message(path) for path in os.listdir(self.channel_dir) if path.endswith(".wav") ]
+            self.fileNameList = [ m.path for m in self.messageList]
+            print(self.fileNameList)
+            self.app.changeOptionBox("Choose message", self.fileNameList)
 
     def send_message(self):
         print("hei")
-        path = self.recorder.get_latest_file()
-        f = open(path, "rb")
-        imagestring = f.read()
-        f.close()
-        imageByteArray = bytearray(imagestring)
-        # DEBUG start:
-        print("hei2")
-        # DEBUG end:
-        imageByteArrayString = str(base64.b64encode(imageByteArray), "utf-8")
-        package = {'ID': self.ID, 'data': imageByteArrayString}
-        payload = json.dumps(package)
-
-        publish.single(MQTT_TOPIC_OUTPUT + str(self.channel), payload, client_id=self.ID, hostname=MQTT_BROKER, port=MQTT_PORT)
-
-        time.sleep(1)
+        try:
+            path = self.recorder.get_latest_file()
+            f = open(path, "rb")
+            imagestring = f.read()
+            f.close()
+            imageByteArray = bytearray(imagestring)
+            # DEBUG start:
+            print("hei2")
+            # DEBUG end:
+            imageByteArrayString = str(base64.b64encode(imageByteArray), "utf-8")
+            package = {'ID': self.ID, 'data': imageByteArrayString}
+            payload = json.dumps(package)
+            publish.single(MQTT_TOPIC_OUTPUT + str(self.channel), payload, client_id=self.ID, hostname=MQTT_BROKER, port=MQTT_PORT)
+            time.sleep(1)
+        except:
+            print("Message not sent since no message is available")
         print("hei3")
 
 
     def create_gui(self):
-        self.app = gui()
+        BUTTON_WIDTH = 20
+        self.app = gui("Walkie-Talkie", "300x500")
 
         # Choose ID
-        self.app.addLabel("NameLabel", "User: " + self.ID)
-        self.app.addLabelEntry("NameEntry")
+        self.app.addLabel("NameLabel", "User: " + self.ID, 0, 0)
+        self.app.startLabelFrame("Names")
+        self.app.addLabel("NameEntryLabel", "Name: ", 1, 0)
+
         def on_button_name(title):
             self.ID = self.app.getEntry("NameEntry")
             self.app.setLabel("NameLabel", "User: " + self.ID)
             print("ASDFDASFSA")
+
+        self.app.addEntry("NameEntry", 1, 1)
         self.app.setEntrySubmitFunction("NameEntry", on_button_name)
+        self.app.stopLabelFrame()
 
 
         # Choose channel
         self.app.startLabelFrame('Change channel:')
-        self.app.addLabel("Channel",text="Connected to channel: {}".format(self.channel))
+        self.app.addLabel("Channel",text="Connected to channel: {}".format(self.channel), colspan=2)
+        self.app.setLabelWidth('Channel', BUTTON_WIDTH*(5/3))
+
         def on_button_pressed_increase(title):
             self.mqtt_client.unsubscribe(MQTT_TOPIC_INPUT + str(self.channel))
             self.channel = (self.channel + 1)% MAX_CHANNELS
@@ -173,7 +190,8 @@ class WalkieTalkie:
             self.mqtt_client.subscribe(MQTT_TOPIC_INPUT + str(self.channel))
             self.app.setLabel("Channel",text="Connected to channel: {}".format(self.channel))
 
-        self.app.addButton('Increase', on_button_pressed_increase)
+        self.app.addButton('Increase', on_button_pressed_increase, 1, 0)
+        self.app.setButtonWidth('Increase', BUTTON_WIDTH)
 
         def on_button_pressed_decrease(title):
             self.mqtt_client.unsubscribe(MQTT_TOPIC_INPUT + str(self.channel))
@@ -182,19 +200,20 @@ class WalkieTalkie:
             self.mqtt_client.subscribe(MQTT_TOPIC_INPUT + str(self.channel))
             self.app.setLabel("Channel",text="Connected to channel: {}".format(self.channel))
 
-        self.app.addButton('Decrease', on_button_pressed_decrease)
+        self.app.addButton('Decrease', on_button_pressed_decrease, 1 , 1)
+        self.app.setButtonWidth('Decrease', BUTTON_WIDTH)
         self.app.stopLabelFrame()
 
-
         # Start and stop recording
-        self.app.startLabelFrame('Recordings:')
+        self.app.startLabelFrame('Recordings')
         print("1")
 
         def on_button_pressed_start(title):
             self.driver.send('start', 'stm_recorder')
             print("2")
 
-        self.app.addButton('Start recording', on_button_pressed_start)
+        self.app.addButton('Start recording', on_button_pressed_start, 0, 0)
+        self.app.setButtonWidth("Start recording", BUTTON_WIDTH)
         print("3")
         print("4")
 
@@ -203,28 +222,40 @@ class WalkieTalkie:
             time.sleep(2)
             self.send_message()
         print('5')
-        self.app.addButton('Stop and send recording', on_button_pressed_stop)
-        self.app.stopLabelFrame()
 
+        def on_button_pressed_resend(title):
+            self.send_message()
+
+        self.app.addButton('Stop and send', on_button_pressed_stop, 0, 1)
+        self.app.setButtonWidth('Stop and send', BUTTON_WIDTH)
+        self.app.addButton('Resend', on_button_pressed_resend, colspan=2)
+        self.app.setButtonWidth('Resend', BUTTON_WIDTH*2)
+        self.app.stopLabelFrame()
 
         # Replay last received message
         self.app.startLabelFrame('Replay message:')
+        self.app.addOptionBox("Choose message", self.fileNameList, colspan=2)
+        self.app.setOptionBoxWidth('Choose message', BUTTON_WIDTH)
 
-        self.app.addLabelOptionBox("Choose message", self.filelist)
-
-        self.app.setOptionBoxWidth("Choose message", 25);
 
         def on_button_pressed_play(title):
-            play_list = self.filelist
+            play_list = self.fileNameList
             if play_list:
                 tmp = self.app.getOptionBox('Choose message')
-                print('Temp Fil: ' + str(tmp))
+                print('Temp File: ' + str(tmp))
                 self.driver.send('start', 'stm_player', args=[os.path.join(self.channel_dir, tmp)])
             else:
-                print("Player listen er tom")
-        self.app.addButton('Replay', on_button_pressed_play)
-        self.app.stopLabelFrame()
+                print("You have no messages. ")
 
+        self.app.addButton('Replay', on_button_pressed_play, 1, 0)
+        self.app.setButtonWidth('Replay', BUTTON_WIDTH)
+        self.app.addButton('Text Message', on_button_pressed_play, 1, 1)
+        self.app.setButtonWidth('Text Message', BUTTON_WIDTH)
+        self.app.stopLabelFrame()
+        self.app.startFrame("message frame")
+        self.app.setBg("white")
+        self.app.addMessage("message", "No message data...")
+        self.app.stopFrame()
         self.app.go()
         self.driver.stop()
 
@@ -233,22 +264,26 @@ class WalkieTalkie:
         Stop the component.
         """
         self.mqtt_client.loop_stop()
-
-        # stop the state machine Driver
+        # Stop the state machine Driver
         self.driver.stop()
 
+def main():
+    # logging.DEBUG: Most fine-grained logging, printing everything
+    # logging.INFO:  Only the most important informational log items
+    # logging.WARN:  Show only warnings and errors.
+    # logging.ERROR: Show only error messages.
+    debug_level = logging.DEBUG
+    logger = logging.getLogger(__name__)
+    logger.setLevel(debug_level)
+    ch = logging.StreamHandler()
+    ch.setLevel(debug_level)
+    formatter = logging.Formatter('%(asctime)s - %(name)-12s - %(levelname)-8s - %(message)s')
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+    t = WalkieTalkie()
 
-# logging.DEBUG: Most fine-grained logging, printing everything
-# logging.INFO:  Only the most important informational log items
-# logging.WARN:  Show only warnings and errors.
-# logging.ERROR: Show only error messages.
-debug_level = logging.DEBUG
-logger = logging.getLogger(__name__)
-logger.setLevel(debug_level)
-ch = logging.StreamHandler()
-ch.setLevel(debug_level)
-formatter = logging.Formatter('%(asctime)s - %(name)-12s - %(levelname)-8s - %(message)s')
-ch.setFormatter(formatter)
-logger.addHandler(ch)
 
-t = WalkieTalkie()
+# Voice to text - create a stm and then put do the
+
+if __name__ == "__main__":
+    main()
