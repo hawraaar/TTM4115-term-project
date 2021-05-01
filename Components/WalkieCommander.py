@@ -14,6 +14,7 @@ import time
 from time import gmtime, strftime, sleep
 from os import system, path
 import os
+import speech_recognition as sr
 
 
 # TODO: choose proper MQTT broker address
@@ -40,13 +41,14 @@ class WalkieTalkie:
         # setting the standard channel as 0
         self.channel = 0
         # the output dir is where recordings are stored
-        self.output_dir = "../player/channel"
+        self.output_dir = "../player/"
+        self.record_dir = "../recordings/"
         self.channel_dir = self.output_dir + str(self.channel)
         self.fileNameList = []
         self.messageList = []
         self.msg_count = 1
         # cleaing the player list
-        self.creat_channel_folder(self.output_dir)
+        self.create_channel_folder(self.output_dir, self.record_dir)
 
         #Burde vi ha create_player_folder for konsistent??
         self.clear_player_folder(self.output_dir)
@@ -92,7 +94,10 @@ class WalkieTalkie:
         self.create_gui()
         print("Help!")
 
-    def creat_channel_folder(self, output_dir):
+
+    def create_channel_folder(self, output_dir, record_dir):
+        if not os.path.exists(output_dir): os.mkdir(output_dir)
+        if not os.path.exists(record_dir): os.mkdir(record_dir)
         for i in range(MAX_CHANNELS):
             path = output_dir + str(i)
             if not os.path.exists(path):
@@ -138,7 +143,7 @@ class WalkieTalkie:
                 f.close()
                 self.driver.send('start', 'stm_player', args=[os.path.join(self.channel_dir, self.temp_file)])
                 time.sleep(1)
-                self.messageList =  [ Message(path) for path in os.listdir(self.channel_dir) if path.endswith(".wav") ]
+                self.messageList  = [ Message(path) for path in os.listdir(self.channel_dir) if path.endswith(".wav") ]
                 self.fileNameList = [ m.path for m in self.messageList]
                 print(self.fileNameList)
                 self.app.changeOptionBox("Choose message", self.fileNameList)
@@ -153,7 +158,8 @@ class WalkieTalkie:
                 if(message_payload_received['sender'] == self.ID):
                     print("Message delivered with ID: "+ message_payload_received['message_id'] + " and sender: " + message_payload_received['sender'])
                     self.app.setLabel("delivered","Message delivered")
-                    self.app.setLabelBg("delivered","green")
+                    self.app.setLabelFg("delivered","green")
+        
 
     def send_message(self):
         print("hei")
@@ -182,7 +188,7 @@ class WalkieTalkie:
         print("sending the message took: {} ".format(time.time()-timestamp))
 
         self.app.setLabel("delivered","Sending")
-        self.app.setLabelBg("delivered","yellow")
+        self.app.setLabelFg("delivered","yellow")
         time.sleep(1)
         # catching the exception thrown by mqtt when no acc is given.
 
@@ -281,17 +287,38 @@ class WalkieTalkie:
             else:
                 print("You have no messages. ")
 
+        def voiceToText(title):
+            play_list = self.fileNameList
+            if play_list:
+                tmp = self.app.getOptionBox('Choose message')
+                r = sr.Recognizer()
+
+                lyd=sr.AudioFile(os.path.join(self.channel_dir, tmp))
+                with lyd as source:
+                    audio = r.record(source)
+                try:
+                    s = r.recognize_google(audio)
+                    self.app.setLabel("message","Message: " + s)
+                    #self.app.setMessageWidth("message", 100)
+                except Exception as e:
+                    print("Exception: "+str(e))
+            else:
+                print("You have no messages. ")
+
+
         self.app.addButton('Replay', on_button_pressed_replay, 1, 0)
         self.app.setButtonWidth('Replay', BUTTON_WIDTH)
-        self.app.addButton('Text Message', on_button_pressed_replay, 1, 1)
+        self.app.addButton('Text Message', voiceToText, 1, 1)
         self.app.setButtonWidth('Text Message', BUTTON_WIDTH)
         self.app.stopLabelFrame()
         self.app.startFrame("message frame")
         self.app.setBg("white")
-        self.app.addMessage("message", "No message data...")
+        self.app.addLabel("message", "No message data...")
+        #self.app.setMessageWidth("message", 100)
+        #self.app.setMessageAnchor("message", "nw")
         self.app.stopFrame()
         self.app.go()
-        self.driver.stop()
+        self.stop()
 
     def stop(self):
         """
