@@ -44,8 +44,11 @@ class WalkieTalkie:
         self.channel_dir = self.output_dir + str(self.channel)
         self.fileNameList = []
         self.messageList = []
+        self.msg_count = 1
         # cleaing the player list
         self.creat_channel_folder(self.output_dir)
+
+        #Burde vi ha create_player_folder for konsistent??
         self.clear_player_folder(self.output_dir)
 
         self.ID = "default"
@@ -65,6 +68,7 @@ class WalkieTalkie:
 
         # subscribe to proper topic(s) of your choice
         self.mqtt_client.subscribe(MQTT_TOPIC_INPUT + str(self.channel))
+        self.mqtt_client.subscribe(MQTT_TOPIC_INPUT+ str(self.channel)+"/ACK")
         # start the internal loop to process MQTT messages
         self.mqtt_client.loop_start()
 
@@ -117,32 +121,39 @@ class WalkieTalkie:
 
         #message_payload_received = json.load(io.BytesIO(msg.payload))
         message_payload_received = json.loads(msg.payload)
-        dataFixed = base64.b64decode(bytearray(bytes(message_payload_received['data'], "utf-8")))
-        #print(dataFixed)
-        dataToByteArray = dataFixed
-        print("client_id: " + message_payload_received['ID'])
 
         # encdoding from bytes to string. This
-        if (message_payload_received['ID'] != self.ID):
-            temp_file = str(strftime("%Y-%m-%d %H-%M-%S", gmtime())) + ".wav"
-            self.temp_file = temp_file
-            f = open(os.path.join(self.channel_dir, self.temp_file), 'wb')
-            f.write(dataToByteArray)
-            print("bbbbbb")
-            f.close()
-            self.driver.send('start', 'stm_player', args=[os.path.join(self.channel_dir, self.temp_file)])
-            time.sleep(1)
-            self.messageList =  [ Message(path) for path in os.listdir(self.channel_dir) if path.endswith(".wav") ]
-            self.fileNameList = [ m.path for m in self.messageList]
-            print(self.fileNameList)
-            self.app.changeOptionBox("Choose message", self.fileNameList)
-        else:
-            if(message_payload_received['Msg_ID'] == self.recorder.get_latest_file()):
-                print("Message delivered")
-                self.app.setLabel("delivered","Message delivered")
-                self.app.setLabelBg("delivered","green")
-            else:
-                print('Message lost not last message-ID')
+        if(str(msg.topic) == MQTT_TOPIC_OUTPUT + str(self.channel)):
+            dataFixed = base64.b64decode(bytearray(bytes(message_payload_received['data'], "utf-8")))
+            #print(dataFixed)
+            dataToByteArray = dataFixed
+            print("client_id: " + message_payload_received['ID'])
+
+            if (message_payload_received['ID'] != self.ID):
+                temp_file = str(strftime("%Y-%m-%d %H-%M-%S", gmtime())) + ".wav"
+                self.temp_file = temp_file
+                f = open(os.path.join(self.channel_dir, self.temp_file), 'wb')
+                f.write(dataToByteArray)
+                print("bbbbbb")
+                f.close()
+                self.driver.send('start', 'stm_player', args=[os.path.join(self.channel_dir, self.temp_file)])
+                time.sleep(1)
+                self.messageList =  [ Message(path) for path in os.listdir(self.channel_dir) if path.endswith(".wav") ]
+                self.fileNameList = [ m.path for m in self.messageList]
+                print(self.fileNameList)
+                self.app.changeOptionBox("Choose message", self.fileNameList)
+
+                #sending ack
+                package_ack = {'message_id': message_payload_received['Msg_ID'], 'sender': message_payload_received['ID']}
+                payload_ack = json.dumps(package_ack)
+                self.mqtt_client.publish(str(msg.topic)+"/ACK", payload_ack, qos=2)
+
+        if (str(msg.topic) == MQTT_TOPIC_INPUT+ str(self.channel)+"/ACK"):
+            if(message_payload_received['message_id'] == self.recorder.get_latest_file()):
+                if(message_payload_received['sender'] == self.ID):
+                    print("Message delivered with ID: "+ message_payload_received['message_id'] + " and sender: " + message_payload_received['sender'])
+                    self.app.setLabel("delivered","Message delivered")
+                    self.app.setLabelBg("delivered","green")
 
     def send_message(self):
         print("hei")
@@ -158,6 +169,7 @@ class WalkieTalkie:
         imageByteArrayString = str(base64.b64encode(imageByteArray), "utf-8")
         package = {'ID': self.ID, 'data': imageByteArrayString, 'Msg_ID': path}
         payload = json.dumps(package)
+        self.msg_count +=1
         # mqtt_msg = publish.single(MQTT_TOPIC_OUTPUT + str(self.channel), payload, client_id=self.ID, hostname=MQTT_BROKER, port=MQTT_PORT, qos = 2)
         mqtt_msg = self.mqtt_client.publish(MQTT_TOPIC_OUTPUT + str(self.channel), payload, qos = 2)
 
@@ -202,9 +214,11 @@ class WalkieTalkie:
 
         def on_button_pressed_increase(title):
             self.mqtt_client.unsubscribe(MQTT_TOPIC_INPUT + str(self.channel))
+            self.mqtt_client.unsubscribe(MQTT_TOPIC_INPUT+ str(self.channel)+"/ACK")
             self.channel = (self.channel + 1)% MAX_CHANNELS
             self.set_channel_path()
             self.mqtt_client.subscribe(MQTT_TOPIC_INPUT + str(self.channel))
+            self.mqtt_client.subscribe(MQTT_TOPIC_INPUT+ str(self.channel)+"/ACK")
             self.app.setLabel("Channel",text="Connected to channel: {}".format(self.channel))
 
         self.app.addButton('Increase', on_button_pressed_increase, 1, 0)
@@ -212,9 +226,11 @@ class WalkieTalkie:
 
         def on_button_pressed_decrease(title):
             self.mqtt_client.unsubscribe(MQTT_TOPIC_INPUT + str(self.channel))
+            self.mqtt_client.unsubscribe(MQTT_TOPIC_INPUT+ str(self.channel)+"/ACK")
             self.channel = (self.channel - 1) % MAX_CHANNELS
             self.set_channel_path()
             self.mqtt_client.subscribe(MQTT_TOPIC_INPUT + str(self.channel))
+            self.mqtt_client.subscribe(MQTT_TOPIC_INPUT+ str(self.channel)+"/ACK")
             self.app.setLabel("Channel",text="Connected to channel: {}".format(self.channel))
 
         self.app.addButton('Decrease', on_button_pressed_decrease, 1 , 1)
