@@ -15,17 +15,20 @@ from time import gmtime, strftime, sleep
 from os import system, path
 import os
 import speech_recognition as sr
+from random import *
 
 
-# TODO: choose proper MQTT broker address
+# Choose MQTT broker address
 MQTT_BROKER = 'mqtt.item.ntnu.no'
 MQTT_PORT = 1883
 
-# TODO: choose proper topics for communication
+# Choose topics for communication
 MQTT_TOPIC_INPUT = 'ttm4115/team_07/Channel'
 MQTT_TOPIC_OUTPUT = 'ttm4115/team_07/Channel'
 MAX_CHANNELS = 5
 
+## TODO: Stuck i "sending" med gul skrift når ingen hører meldingen
+## TODO: Bug? Man kan replaye egne meldinger fordi alt i player-mappen dukker opp i optionbox. Men ikke viktig.
 
 class Message:
     def __init__(self, path):
@@ -53,7 +56,9 @@ class WalkieTalkie:
         #Burde vi ha create_player_folder for konsistent??
         self.clear_player_folder(self.output_dir)
 
-        self.ID = "default"
+        # Temporary ID
+        self.ID = "default" + str(randint(1, 9999))
+
         # get the logger object for the component
         self._logger = logging.getLogger(__name__)
         print('logging under name {}.'.format(__name__))
@@ -70,7 +75,7 @@ class WalkieTalkie:
 
         # subscribe to proper topic(s) of your choice
         self.mqtt_client.subscribe(MQTT_TOPIC_INPUT + str(self.channel))
-        self.mqtt_client.subscribe(MQTT_TOPIC_INPUT+ str(self.channel)+"/ACK")
+        self.mqtt_client.subscribe(MQTT_TOPIC_INPUT + str(self.channel) + "/ACK")
         # start the internal loop to process MQTT messages
         self.mqtt_client.loop_start()
 
@@ -81,8 +86,8 @@ class WalkieTalkie:
 
         # player
         player = Player.create_machine('stm_player', self)
-        self.player=player
-        stm_player=player.stm
+        self.player = player
+        stm_player = player.stm
 
         # creating driver, attaching machines
         self.driver = Driver()
@@ -119,7 +124,7 @@ class WalkieTalkie:
         self._logger.debug('MQTT connected to {}'.format(client))
         self.client_id = client
 
-    # Function when WalkieTalkie receives a message
+    # Runs when WalkieTalkie receives a message
     def on_message(self, client, userdata, msg):
         print("A message is received")
         self._logger.debug('Incoming message to topic {}'.format(msg.topic))
@@ -127,15 +132,15 @@ class WalkieTalkie:
         #message_payload_received = json.load(io.BytesIO(msg.payload))
         message_payload_received = json.loads(msg.payload)
 
-        # encdoding from bytes to string. This
+        # Check correct channel
         if(str(msg.topic) == MQTT_TOPIC_OUTPUT + str(self.channel)):
-            dataFixed = base64.b64decode(bytearray(bytes(message_payload_received['data'], "utf-8")))
-            #print(dataFixed)
-            dataToByteArray = dataFixed
+            dataToByteArray = base64.b64decode(bytearray(bytes(message_payload_received['data'], "utf-8")))
+
             print("client_id: " + message_payload_received['ID'])
 
+            # Check that message is not sent to self
             if (message_payload_received['ID'] != self.ID):
-                temp_file = str(strftime("%Y-%m-%d %H-%M-%S", gmtime())) + ".wav"
+                temp_file = message_payload_received['ID'] + str(strftime(" %Y-%m-%d %H-%M-%S", gmtime())) + ".wav"
                 self.temp_file = temp_file
                 f = open(os.path.join(self.channel_dir, self.temp_file), 'wb')
                 f.write(dataToByteArray)
@@ -148,11 +153,12 @@ class WalkieTalkie:
                 print(self.fileNameList)
                 self.app.changeOptionBox("Choose message", self.fileNameList)
 
-                #sending ack
+                # Sending ack
                 package_ack = {'message_id': message_payload_received['Msg_ID'], 'sender': message_payload_received['ID']}
                 payload_ack = json.dumps(package_ack)
                 self.mqtt_client.publish(str(msg.topic)+"/ACK", payload_ack, qos=2)
 
+        # Checks for ACK
         if (str(msg.topic) == MQTT_TOPIC_INPUT+ str(self.channel)+"/ACK"):
             if(message_payload_received['message_id'] == self.recorder.get_latest_file()):
                 if(message_payload_received['sender'] == self.ID):
@@ -191,11 +197,12 @@ class WalkieTalkie:
         self.app.setLabelFg("delivered","yellow")
         time.sleep(1)
         # catching the exception thrown by mqtt when no acc is given.
+        ## TODO: Her kan vi kanskje ha Message failed rød tekst? Hvis Catch error.
 
 
     # Creates the appJar GUI
     def create_gui(self):
-        BUTTON_WIDTH = 20
+        BUTTON_WIDTH = 30
         self.app = gui("Walkie-Talkie", "300x500")
 
         # Choose ID
@@ -209,6 +216,7 @@ class WalkieTalkie:
             print("User changed")
 
         self.app.addEntry("NameEntry", 1, 1)
+        self.app.setEntryMaxLength("NameEntry", 16)
         self.app.setEntrySubmitFunction("NameEntry", on_button_name)
         self.app.stopLabelFrame()
 
@@ -258,7 +266,7 @@ class WalkieTalkie:
 
         def on_button_pressed_stop(title):
             self.driver.send('stop', 'stm_recorder')
-            time.sleep(2)
+            time.sleep(1)
             self.send_message()
         print('5')
 
