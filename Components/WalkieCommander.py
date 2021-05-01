@@ -159,7 +159,7 @@ class WalkieTalkie:
                     print("Message delivered with ID: "+ message_payload_received['message_id'] + " and sender: " + message_payload_received['sender'])
                     self.app.setLabel("delivered","Message delivered")
                     self.app.setLabelFg("delivered","green")
-        
+
 
     def send_message(self):
         print("hei")
