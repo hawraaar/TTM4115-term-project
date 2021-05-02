@@ -18,8 +18,8 @@ import json
 MQTT_BROKER = 'mqtt.item.ntnu.no'
 MQTT_PORT = 1883
 
-MQTT_TOPIC_INPUT = 'ttm4115/team_07/command'
-MQTT_TOPIC_OUTPUT = 'ttm4115/team_07/answer'
+MQTT_TOPIC_INPUT = 'ttm4115/team07/command'
+MQTT_TOPIC_OUTPUT = 'ttm4115/team07/answer'
 
 
 
