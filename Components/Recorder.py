@@ -1,6 +1,5 @@
 from stmpy import Machine, Driver
 
-import paho.mqtt.client as mqtt
 import stmpy
 import logging
 from threading import Thread
@@ -12,21 +11,7 @@ from time import gmtime, strftime, sleep
 
 import pyaudio
 import wave
-from threading import Thread
-import json
 
-MQTT_BROKER = 'mqtt.item.ntnu.no'
-MQTT_PORT = 1883
-
-MQTT_TOPIC_INPUT = 'ttm4115/team07/command'
-MQTT_TOPIC_OUTPUT = 'ttm4115/team07/answer'
-
-
-
-#TODO nr1: choose receiver
-#TODO nr2: Every sender should have an ID
-#          Every client subsribes to a channel/topic
-#          The payload of the message should contain a ID identifying the sender.
 
 class Recorder:
     def __init__(self):
@@ -47,14 +32,14 @@ class Recorder:
 
         # get the logger object for the component
         self._logger = logging.getLogger(__name__)
-        print('logging under name {}.'.format(__name__))
+        print('Logging under name {}.'.format(__name__))
         self._logger.info('Starting Component')
 
 
 
     def record(self):
-        print("starting")
-        self._logger.info('Starting')
+        print("Starting recording")
+        self._logger.info('Starting up...')
         self.filename = str(strftime("%Y-%m-%d %H-%M-%S", gmtime())) + ".wav"
         stream = self.p.open(format=self.sample_format,
                              channels=self.channels,
@@ -67,24 +52,21 @@ class Recorder:
         while self.recording:
             data = stream.read(self.chunk)
             self.frames.append(data)
-        print("done recording")
+        print("Done recording")
         # Adding the filename to the list when finished recording
         self.filename_list.append(self.filename)
         # Stop and close the stream
         stream.stop_stream()
         stream.close()
 
-        # Terminate the PortAudio interface
-        # (This leads to only one recodring being possible, commented out for now)
-        # self.p.terminate()
 
     def stop(self):
-        print("stopping")
+        print("Stopped recording")
         self.recording = False
 
 
     def process(self):
-        print("processing")
+        print("Processing recording")
         # Save the recorded data as a WAV file
         path = self.output_dir + '//' + self.filename
         self.path = path
@@ -101,7 +83,7 @@ class Recorder:
             os.remove(delete_path)
             self.filename_list.remove(delete_file_name)
 
-        print("finished processing")
+        print("Finished processing recording")
 
     def create_machine(m_name, component):
         recorder = Recorder()

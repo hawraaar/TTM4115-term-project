@@ -1,6 +1,5 @@
 from stmpy import Machine, Driver
 
-import paho.mqtt.client as mqtt
 import stmpy
 import logging
 from threading import Thread
@@ -12,13 +11,6 @@ import time
 
 import pyaudio
 import wave
-from threading import Thread
-import json
-
-# TODO: Create a message queue and a way to handle receiving and
-# playing multiple messages.
-#       Folder for recodings - and a list that we keep updated.
-
 
 
 class Player:
